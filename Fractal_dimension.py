@@ -1,7 +1,59 @@
 import sympy as sp
+import numpy as np
 import matplotlib.pyplot as plt
+from sympy import Basic
 
-horizontal_box_count = 32
+horizontal_box_count = 512
+
+def make_callable(f, x):
+    if isinstance(f, Basic):
+        return sp.lambdify(x, f, 'numpy')
+    elif callable(f):
+        return f
+    else:
+        raise TypeError("Brzydko >:C", type(f))
+
+def save_grid(grid, file_name='grid_image.png'): # Przyznaję, napisane przez GPT
+    # Przekształcenie siatki na macierz 0 i 1
+    grid_array = np.array([[1 if cell == 'X' else 0 for cell in row] for row in grid])
+
+    # Tworzenie obrazu
+    plt.imshow(grid_array, cmap='Greys', interpolation='nearest')
+
+    # Usuwanie osi, żeby obraz wyglądał czysto
+    plt.axis('on')
+
+    # Zapis obrazu do pliku
+    plt.savefig(file_name, bbox_inches='tight', pad_inches=0)
+
+def find_xs_numeric(f, x, domain, ran, count, res=10000):
+    b_size = float((ran.sup - ran.inf) / count)
+    x_step = (domain.sup - domain.inf) / res
+    xs = [[' ' for _ in range(res)] for _ in range(count)]
+
+    #N = sp.lambdify(x, f, 'numpy')
+    N = make_callable(f, x)
+    # Check f(x) values for different x:
+    current = float(domain.inf - (x_step / 2) )# To get average value
+    for i in range(res):
+        current += x_step
+        # Exclude dangerous values:
+        try:
+            y = N(float(current))
+        except(ZeroDivisionError, ValueError, TypeError):
+            print("WTF", current)
+            continue
+        #print("UDALO SIE UDALO SIE UDALO SIE ---------------------")
+        if(y < ran.inf or y > ran.sup):
+            continue
+        # Choosing a row in xs where the y is:
+        row = round((float(ran.sup) - y) / b_size) # Trust me, it works
+        if(0 <= row < count): # Additional protection
+            xs[row][i] = 'X'
+        else:
+            print("fuck you", row)
+    return xs
+
 def find_next_two(num):
     two = 2
     while(two <= abs(num)):
@@ -10,19 +62,6 @@ def find_next_two(num):
     if(num < 0):
         return -two
     return two
-
-def find_values(f, x, x1, x2, bottom, top):
-    dom = sp.Interval(x1, x2)
-    below_top = sp.solve_univariate_inequality(sp.Le(f, top), x, False, dom)
-    above_bottom = sp.solve_univariate_inequality(sp.Ge(f, bottom), x, False, dom)
-
-    return(sp.Intersection(below_top, above_bottom))
-
-def is_in_box(bottom, top, value_set):
-    box = sp.Interval(bottom, top)
-    if(sp.Intersection(box, value_set) != sp.EmptySet):
-        return 'X'
-    return ' '
 
 def create_grid_x(f): # For one variable functions
 
@@ -58,6 +97,7 @@ def create_grid_x(f): # For one variable functions
     box_size = ( (abs(domain_f.inf) + abs(domain_f.sup) ) / horizontal_box_count)
     # Now check how many boxes will fit vertically:
     vert_box_count = (abs(range_f.inf) + abs(range_f.sup) ) // box_size
+    print("firstly we can fit ", vert_box_count, "boxes")
     # And expand it up to next_two() :
     range_f = sp.Interval(range_f.inf, range_f.sup + (find_next_two(vert_box_count) - vert_box_count) * box_size)
     vert_box_count = find_next_two(vert_box_count)
@@ -65,35 +105,28 @@ def create_grid_x(f): # For one variable functions
     print(range_f, vert_box_count)
 
     # Actual init:
-    grid = [[False for _ in range(horizontal_box_count)] for _ in range(vert_box_count)]
 
-    # Now it is time to mark boxes
+    grid = find_xs_numeric(f, x, domain_f, range_f, vert_box_count, horizontal_box_count)
 
-    # For every x range, we find sets of values of f(x)
-    values = [None for _ in range(horizontal_box_count)]
-    for nums in range(horizontal_box_count):
-        values[nums] = find_values(f, x, nums, nums+box_size, domain_f.inf, domain_f.sup)
-    print(values)
-    # Mark boxes:
-    for row in range(vert_box_count):
-        for col in range(horizontal_box_count):
-            bottom = range_f.sup - ((row+1) * box_size)
-            grid[row][col] = is_in_box(bottom, bottom+box_size, values[col])
+    #save_grid(grid, 'output_grid.png')
     return grid
 
-def graph():
-    x = sp.symbols('x')
-    grid = create_grid_x(x**2)
+def count_boxes(boxes, rows, cols):
+    N = 0
+    for r in range(rows):
+        for c in range(cols):
+            if(boxes[r][c] == True):
+                N += 1
+    # Prepare new box grid (scaled to bigger boxes - smaller resolution)
+    scaled = [[False for _ in range(cols//2)] for _ in range(rows//2)]
 
-
-    plt.imshow(grid, cmap='viridis', interpolation='nearest')
-    plt.show()
+    if(rows == 1 or cols == 1): # End recursion
+        return [N]
+    return [N] + count_boxes(scaled, rows//2, cols//2)
 
 x = sp.symbols('x')
 
 grid = (create_grid_x(x**2))
 
 for i in range(len(grid)):
-    for j in range(len(grid[i])):
-        print(grid[i][j], end="")
-    print()
+    print(grid[i])
