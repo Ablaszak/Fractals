@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sympy import Basic
 
-horizontal_box_count = 512
+horizontal_box_count = 1024
 
 def make_callable(f, x):
     if isinstance(f, Basic):
@@ -31,7 +31,6 @@ def find_xs_numeric(f, x, domain, ran, count, res=10000):
     x_step = (domain.sup - domain.inf) / res
     xs = [[' ' for _ in range(res)] for _ in range(count)]
 
-    #N = sp.lambdify(x, f, 'numpy')
     N = make_callable(f, x)
     # Check f(x) values for different x:
     current = float(domain.inf - (x_step / 2) )# To get average value
@@ -65,14 +64,21 @@ def find_next_two(num):
 
 def create_grid_x(f): # For one variable functions
 
+    x = sp.symbols('x')
     print("Podaj dziedzinę: ")
     x1 = float(input())
     x2 = float(input())
     domain_f = sp.Interval(x1, x2)
+    print("Dziedzina: ", domain_f)
+    try:
+        range_f = sp.calculus.util.function_range(f, x, domain_f)
+    except:
+        print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
+        y1 = float(input())
+        y2 = float(input())
+        range_f = sp.Interval(y1, y2)
 
-    x = sp.symbols('x')
-    range_f = sp.calculus.util.function_range(f, x, domain_f)
-    print(range_f)
+    print("Przedział wartości: ", range_f)
     # check if interval is open:
     if(range_f.is_left_unbounded or range_f.is_right_unbounded):
         print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
@@ -126,7 +132,9 @@ def count_boxes(boxes, rows, cols):
 
 x = sp.symbols('x')
 
-grid = (create_grid_x(x**2))
+grid = (create_grid_x(sp.sin(1/x)))
 
 for i in range(len(grid)):
-    print(grid[i])
+    for j in grid[i]:
+        print(j, end="")
+    print()
