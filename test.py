@@ -13,8 +13,33 @@ def find_xs_sympy(f, x, domain, ran, count): # USE VERTICAL COUNT
         xs[i] = sp.Intersection(below_top, above_bottom)
     return xs
 
-def find_xs_numeric(f, x, domain, ran, count, res=1000):
-    asd =0
+def find_xs_numeric(f, x, domain, ran, count, res=10000):
+    b_size = (abs(ran.inf) + abs(ran.sup)) / count
+    x_step = (abs(domain.inf) + abs(domain.sup)) / res
+    xs = [[' ' for _ in range(res)] for _ in range(count)]
+
+    N = sp.lambdify(x, f, 'numpy')
+
+    # Check f(x) values for different x:
+    current = domain.inf - (x_step / 2) # To get average value
+    for i in range(res):
+        current += x_step
+        # Exclude dangerous values:
+        try:
+            y = N(current)
+        except(TypeError, ValueError, ZeroDivisionError, FloatingPointError, RuntimeWarning):
+            continue
+
+        if(y < ran.inf or y > ran.sup):
+            continue
+        # Choosing a row in xs where the y is:
+        row = int((ran.sup - y) / b_size) # Trust me, it works
+        if(0 <= row <= count): # Additional protection
+            xs[row][i] = 'X'
+
+    return xs
 
 x = sp.symbols('x')
-print(find_xs_sympy(x**2, x, sp.Interval(-5, 5), sp.Interval(-25, 25), 2048))
+grid = find_xs_numeric(x**2, x, sp.Interval(-5, 5), sp.Interval(-25, 25), 2048)
+
+print()
