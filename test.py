@@ -1,99 +1,20 @@
 import sympy as sp
-import matplotlib.pyplot as plt
 
-horizontal_box_count = 32
-def find_next_two(num):
-    two = 2
-    while(two <= abs(num)):
-        two *= 2
+# Finds sets of x values, where f(x) is in row range
+def find_xs_sympy(f, x, domain, ran, count): # USE VERTICAL COUNT
+    xs = [None for _ in range(count)]
+    b_size = (abs(ran.inf) + abs(ran.sup)) / count
 
-    if(num < 0):
-        return -two
-    return two
+    for i in range(count):
+        top = ran.sup - (i*b_size)
+        bottom = top-b_size
+        below_top = sp.solve_univariate_inequality(sp.Le(f, top), x, False, domain)
+        above_bottom = sp.solve_univariate_inequality(sp.Ge(f, bottom), x, False, domain)
+        xs[i] = sp.Intersection(below_top, above_bottom)
+    return xs
 
-def find_values(f, x, x1, x2, bottom, top):
-    dom = sp.Interval(x1, x2)
-    below_top = sp.solve_univariate_inequality(sp.Le(f, top), x, False, dom)
-    above_bottom = sp.solve_univariate_inequality(sp.Ge(f, bottom), x, False, dom)
-
-    return(sp.Intersection(below_top, above_bottom))
-
-def is_in_box(bottom, top, value_set):
-    box = sp.Interval(bottom, top)
-    if(sp.Intersection(box, value_set) != sp.EmptySet):
-        return 'X'
-    return ' '
-
-def create_grid_x(f): # For one variable functions
-
-    print("Podaj dziedzinę: ")
-    x1 = float(input())
-    x2 = float(input())
-    domain_f = sp.Interval(x1, x2)
-
-    x = sp.symbols('x')
-    range_f = sp.calculus.util.function_range(f, x, domain_f)
-    print(range_f)
-    # check if interval is open:
-    if(range_f.is_left_unbounded or range_f.is_right_unbounded):
-        print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
-        y1 = float(input())
-        y2 = float(input())
-        range_f = sp.Interval(y1, y2)
-    else:
-        print("Czy chcesz przeanalizować fraktal tylko w wybranym zakresie (w pionie)? (y/n): ")
-        y1 = input()
-        if(y1 == 'Y' or y1 == 'y'):
-            print("Podaj przedziały (wartości zostaną lekko zwiększone): ")
-            y1 = float(input())
-            y2 = float(input())
-            range_f = sp.Interval(y1, y2)
-
-    # Now we actually create the grid:
-
-    # Init:
-    # First, we have to find grid dimensions
-    middle = (((domain_f.inf + domain_f.sup)/2) , ((range_f.inf + range_f.sup)/2))
-    global horizontal_box_count
-    box_size = ( (abs(domain_f.inf) + abs(domain_f.sup) ) / horizontal_box_count)
-    # Now check how many boxes will fit vertically:
-    vert_box_count = (abs(range_f.inf) + abs(range_f.sup) ) // box_size
-    # And expand it up to next_two() :
-    range_f = sp.Interval(range_f.inf, range_f.sup + (find_next_two(vert_box_count) - vert_box_count) * box_size)
-    vert_box_count = find_next_two(vert_box_count)
-
-    print(range_f, vert_box_count)
-
-    # Actual init:
-    grid = [[False for _ in range(horizontal_box_count)] for _ in range(vert_box_count)]
-
-    # Now it is time to mark boxes
-
-    # For every x range, we find sets of values of f(x)
-    values = [None for _ in range(horizontal_box_count)]
-    for nums in range(horizontal_box_count):
-        values[nums] = find_values(f, x, nums, nums+box_size, domain_f.inf, domain_f.sup)
-    print(values)
-    # Mark boxes:
-    for row in range(vert_box_count):
-        for col in range(horizontal_box_count):
-            bottom = range_f.sup - ((row+1) * box_size)
-            grid[row][col] = is_in_box(bottom, bottom+box_size, values[col])
-    return grid
-
-def graph():
-    x = sp.symbols('x')
-    grid = create_grid_x(x**2)
-
-
-    plt.imshow(grid, cmap='viridis', interpolation='nearest')
-    plt.show()
+def find_xs_numeric(f, x, domain, ran, count, res=1000):
+    asd =0
 
 x = sp.symbols('x')
-
-grid = (create_grid_x(x**2))
-
-for i in range(len(grid)):
-    for j in range(len(grid[i])):
-        print(grid[i][j], end="")
-    print()
+print(find_xs_sympy(x**2, x, sp.Interval(-5, 5), sp.Interval(-25, 25), 2048))
