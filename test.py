@@ -33,7 +33,7 @@ def create_grid_x(f): # For one variable functions
 
     x = sp.symbols('x')
     range_f = sp.calculus.util.function_range(f, x, domain_f)
-
+    print(range_f)
     # check if interval is open:
     if(range_f.is_left_unbounded or range_f.is_right_unbounded):
         print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
@@ -59,8 +59,10 @@ def create_grid_x(f): # For one variable functions
     # Now check how many boxes will fit vertically:
     vert_box_count = (abs(range_f.inf) + abs(range_f.sup) ) // box_size
     # And expand it up to next_two() :
-    range_f = sp.Interval(range_f. inf, range_f.sup + find_next_two(vert_box_count) - vert_box_count)
+    range_f = sp.Interval(range_f.inf, range_f.sup + (find_next_two(vert_box_count) - vert_box_count) * box_size)
     vert_box_count = find_next_two(vert_box_count)
+
+    print(range_f, vert_box_count)
 
     # Actual init:
     grid = [[False for _ in range(horizontal_box_count)] for _ in range(vert_box_count)]
@@ -69,8 +71,9 @@ def create_grid_x(f): # For one variable functions
 
     # For every x range, we find sets of values of f(x)
     values = [None for _ in range(horizontal_box_count)]
-    for i in range(horizontal_box_count):
-        values[i] = find_values(f, x, i, i+box_size, domain_f.inf, domain_f.sup)
+    for nums in range(horizontal_box_count):
+        values[nums] = find_values(f, x, nums, nums+box_size, domain_f.inf, domain_f.sup)
+    print(values)
     # Mark boxes:
     for row in range(vert_box_count):
         for col in range(horizontal_box_count):
@@ -91,4 +94,6 @@ x = sp.symbols('x')
 grid = (create_grid_x(x**2))
 
 for i in range(len(grid)):
-    print(grid[i])
+    for j in range(len(grid[i])):
+        print(grid[i][j], end="")
+    print()
