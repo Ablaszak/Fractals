@@ -1,0 +1,34 @@
+We take a grid of boxes
+Scale up en object by "some factor" (can it be just 2?)
+    In reality, we can scale down the grid, make more boxes
+
+For circle:
+Number of touched boxes should rize by square of scaling factor
+
+Yes, scaling by 2 is good, the scaling factor can be random,
+so c=2 will give us consistent and easy to implement factor
+
+When we get a number of boxes touched for every scaling factor,
+and find the average tendency, we should get sth like:
+    boxes touched = c * x^sth
+
+    Where x = scaling factor
+    <sth> = fractal dimension
+Now, wtf is c?
+Apparently, c is "some constant"
+
+CS approach:
+N = Number od boxes touched
+c = some constant
+s = scaling factor
+dim = fractal dimension, what we are looking for
+
+Now: log(N) = log(c) + dim * log(s)
+
+The point is, if we count log(N) for every log(s),
+we get a linear tendency
+Surprise: this tendency is a line with slope = dim !!!
+
+I think i might go from maximum box resolution to bigger and bigger
+boxes, it will allow me to solve this problem with a nice bruteforce
+
