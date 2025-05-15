@@ -1,0 +1,12 @@
+Trzeba pobrać następujące packege:
+
+NAJWAŻNIEJSZE: PIP
+Bez tego nie pobierzesz następnych rzeczy
+
+Funkcjonalne:
+
+- Sympy
+- Numpy
+- Matplotlib
+
+Żeby pobrać należy wykonać komendę "pip install <nazwa_packegu_z_małej_litery>"
