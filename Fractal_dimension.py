@@ -125,14 +125,7 @@ def create_grid_IMG():
 
     arr = asarray(image)
     bool_arr = [[False for _ in range(len(arr[0]))] for _ in range(len(arr))]
-    """
-    for row in range(len(arr)):
-        for col in range(len(arr[0])):
-            print(arr[row][col], end = " ")
-        print()
-    return ("dupa hehe")
 
-"""
     # Rewrite as True/False array:
     treshold = 100
     for row in range(len(arr)):
@@ -140,6 +133,11 @@ def create_grid_IMG():
             r, g, b = arr[row][col]
             if(r<treshold or g<treshold or b<treshold):
                 bool_arr[row][col] = True
+
+    for row in range(len(arr)):
+        for col in range(len(arr[0])):
+            print(bool_arr[row][col], end = " ")
+        print()
 
     # Expand to fit 2^x edge size:
     extra_cols = find_next_two(len(bool_arr)) - len(bool_arr)
@@ -183,6 +181,7 @@ def compute_dimension(b_num):
 
 arr = create_grid_IMG()
 Ns = count_boxes(arr, len(arr), len(arr[0]))
+print(Ns)
 print(compute_dimension(Ns))
 """
 x = sp.symbols('x')
