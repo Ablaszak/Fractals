@@ -121,7 +121,7 @@ def rescale(grid):
 
 def create_grid_IMG():
     img_loc = input("Podaj lokalizację/nazwę pliku: ")
-    image = Image.open(img_loc).convert("RGB")
+    image = Image.open(img_loc).convert("L")
 
     arr = asarray(image)
     bool_arr = [[False for _ in range(len(arr[0]))] for _ in range(len(arr))]
@@ -130,18 +130,13 @@ def create_grid_IMG():
     treshold = 100
     for row in range(len(arr)):
         for col in range(len(arr[0])):
-            r, g, b = arr[row][col]
-            if(r<treshold or g<treshold or b<treshold):
+            L = arr[row][col]
+            if(L<treshold):
                 bool_arr[row][col] = True
 
-    for row in range(len(arr)):
-        for col in range(len(arr[0])):
-            print(bool_arr[row][col], end = " ")
-        print()
-
     # Expand to fit 2^x edge size:
-    extra_cols = find_next_two(len(bool_arr)) - len(bool_arr)
-    extra_rows = find_next_two(len(bool_arr[0])) - len(bool_arr[0])
+    extra_cols = find_next_two(len(bool_arr[0])) - len(bool_arr[0])
+    extra_rows = find_next_two(len(bool_arr)) - len(bool_arr)
     for row in range(len(bool_arr)):
         bool_arr[row] = bool_arr[row] + [False for _ in range(extra_cols)]
     newlen = len(bool_arr[0])
@@ -150,6 +145,15 @@ def create_grid_IMG():
     return bool_arr
 
 def count_boxes(boxes, rows, cols):
+
+    for row in range(len(boxes)):
+        for col in range(len(boxes[0])):
+            if(boxes[row][col] == True):
+                print('X', end = "")
+            else:
+                print(' ', end = "")
+        print()
+
     N = 0
     for r in range(rows):
         for c in range(cols):

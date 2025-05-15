@@ -18,7 +18,7 @@ Now, wtf is c?
 Apparently, c is "some constant"
 
 CS approach:
-N = Number od boxes touched
+N = Number of boxes touched
 c = some constant
 s = scaling factor
 dim = fractal dimension, what we are looking for
