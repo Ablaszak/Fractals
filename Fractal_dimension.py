@@ -1,10 +1,11 @@
 import sympy as sp
 import numpy as np
-import math
+from math import log2
 import matplotlib.pyplot as plt
-from numpy.ma.core import asarray
+from numpy import asarray
 from sympy import Basic
 from PIL import Image
+from skimage.morphology import skeletonize
 
 horizontal_box_count = 64
 
@@ -45,7 +46,7 @@ def find_xs_numeric(f, x, domain, ran, count, res=10000):
 
 def find_next_two(num):
     two = 2
-    while(two <= abs(num)):
+    while(two < abs(num)):
         two *= 2
 
     if(num < 0):
@@ -110,12 +111,12 @@ def create_grid_x(f): # For one variable functions
     return grid
 
 def rescale(grid):
-    rows = len(grid)
-    cols = len(grid[0])
+    rows = len(grid)//2
+    cols = len(grid[0])//2
     new = [[False for _ in range(cols)] for _ in range(rows)]
 
-    for r in range(rows//2):
-        for c in range(cols//2):
+    for r in range(rows):
+        for c in range(cols):
             new[r][c] = (grid[2*r][2*c] or grid[2*r][2*c + 1] or grid[2*r + 1][2*c] or grid[2*r + 1][2*c + 1])
     return new
 
@@ -127,11 +128,11 @@ def create_grid_IMG():
     bool_arr = [[False for _ in range(len(arr[0]))] for _ in range(len(arr))]
 
     # Rewrite as True/False array:
-    treshold = 100
+    threshold = 100
     for row in range(len(arr)):
         for col in range(len(arr[0])):
             L = arr[row][col]
-            if(L<treshold):
+            if(L<threshold):
                 bool_arr[row][col] = True
 
     # Expand to fit 2^x edge size:
@@ -142,10 +143,25 @@ def create_grid_IMG():
     newlen = len(bool_arr[0])
     bool_arr += [[False for _ in range(newlen)] for _ in range(extra_rows)]
 
+    # Skeletonize:
+    #skel = input("Czy chcesz wygładzić/zmniejszyć grubość linii? (y/n): ")
+    #if(skel == 'y' or skel == 'Y'):
+    #    bool_arr = skeletonize(np.array(bool_arr, dtype=bool))
+    #debug:
+    """
+    for row in range(len(bool_arr)):
+        for col in range(len(bool_arr[0])):
+            if(bool_arr[row][col] == True):
+                print('X', end = "")
+            else:
+                print(' ', end = "")
+        print()
+    """
     return bool_arr
 
 def count_boxes(boxes, rows, cols):
-
+    #debug:
+    """
     for row in range(len(boxes)):
         for col in range(len(boxes[0])):
             if(boxes[row][col] == True):
@@ -153,7 +169,7 @@ def count_boxes(boxes, rows, cols):
             else:
                 print(' ', end = "")
         print()
-
+    """
     N = 0
     for r in range(rows):
         for c in range(cols):
@@ -173,19 +189,45 @@ def compute_dimension(b_num):
     Important: We use log base = 2
     We also use scaling factor = 2, so log(s) = i
     """
+
+    # Kill first results: (better or not?)
+    b_num = b_num[len(b_num)//5 : ]
+    print(b_num)
+
     n = len(b_num)
     logs = np.empty([n])
     logN = np.empty([n])
 
     for i in range(n):
         logs[i] = i # log2(2^i) = i
-        logN[i] = math.log2(b_num[i])
+        logN[i] = log2(b_num[i])
+
     a, b = np.polyfit(logs, logN, 1)
+
+    # Pisane przez chat xD:
+    # 1. Scatter: zaznaczamy punkty
+    plt.scatter(logs, logN, marker='o', label='punkty (log s, log N)')
+
+    # 2. Linia regresji: y = a*x + b
+    x_line = np.array([logs.min(), logs.max()])
+    y_line = a * x_line + b
+    plt.plot(x_line, y_line, linestyle='-', label=f'fit: y={a:.3f}x+{b:.3f}')
+
+    # 3. Opisy osi i legenda
+    plt.xlabel('log₂(skalowanie) [i]')
+    plt.ylabel('log₂(liczba pudełek) [log N]')
+    plt.title('Box‐counting: log–log i linia regresji')
+    plt.legend()
+    plt.grid(True)
+
+    # 4. Zapisz wykres
+    plt.savefig('wykres.png', dpi=300, bbox_inches='tight')
+    plt.close()
+
     return a
 
-arr = create_grid_IMG()
-Ns = count_boxes(arr, len(arr), len(arr[0]))
-print(Ns)
+arrout = create_grid_IMG()
+Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
 print(compute_dimension(Ns))
 """
 x = sp.symbols('x')
