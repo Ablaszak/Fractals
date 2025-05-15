@@ -1,9 +1,12 @@
 import sympy as sp
 import numpy as np
+import math
 import matplotlib.pyplot as plt
+from numpy.ma.core import asarray
 from sympy import Basic
+from PIL import Image
 
-horizontal_box_count = 1024
+horizontal_box_count = 64
 
 def make_callable(f, x):
     if isinstance(f, Basic):
@@ -12,19 +15,6 @@ def make_callable(f, x):
         return f
     else:
         raise TypeError("Brzydko >:C", type(f))
-
-def save_grid(grid, file_name='grid_image.png'): # Przyznaję, napisane przez GPT
-    # Przekształcenie siatki na macierz 0 i 1
-    grid_array = np.array([[1 if cell == 'X' else 0 for cell in row] for row in grid])
-
-    # Tworzenie obrazu
-    plt.imshow(grid_array, cmap='Greys', interpolation='nearest')
-
-    # Usuwanie osi, żeby obraz wyglądał czysto
-    plt.axis('on')
-
-    # Zapis obrazu do pliku
-    plt.savefig(file_name, bbox_inches='tight', pad_inches=0)
 
 def find_xs_numeric(f, x, domain, ran, count, res=10000):
     b_size = float((ran.sup - ran.inf) / count)
@@ -62,6 +52,7 @@ def find_next_two(num):
         return -two
     return two
 
+
 def create_grid_x(f): # For one variable functions
 
     x = sp.symbols('x')
@@ -71,6 +62,7 @@ def create_grid_x(f): # For one variable functions
     domain_f = sp.Interval(x1, x2)
     print("Dziedzina: ", domain_f)
     try:
+        print("Jeżeli proecs wykonuje się w nieskończoność, wciśnij ctrl+c")
         range_f = sp.calculus.util.function_range(f, x, domain_f)
     except:
         print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
@@ -86,7 +78,7 @@ def create_grid_x(f): # For one variable functions
         y2 = float(input())
         range_f = sp.Interval(y1, y2)
     else:
-        print("Czy chcesz przeanalizować fraktal tylko w wybranym zakresie (w pionie)? (y/n): ")
+        print("Czy chcesz przeanalizować fraktal w innym zakresie (w pionie)? (y/n): ")
         y1 = input()
         if(y1 == 'Y' or y1 == 'y'):
             print("Podaj przedziały (wartości zostaną lekko zwiększone): ")
@@ -98,15 +90,15 @@ def create_grid_x(f): # For one variable functions
 
     # Init:
     # First, we have to find grid dimensions
-    middle = (((domain_f.inf + domain_f.sup)/2) , ((range_f.inf + range_f.sup)/2))
+    middle = (((domain_f.sup - domain_f.inf)/2) , ((range_f.sup - range_f.inf)/2))
     global horizontal_box_count
-    box_size = ( (abs(domain_f.inf) + abs(domain_f.sup) ) / horizontal_box_count)
+    box_size = ((domain_f.sup - domain_f.inf) / horizontal_box_count)
     # Now check how many boxes will fit vertically:
-    vert_box_count = (abs(range_f.inf) + abs(range_f.sup) ) // box_size
+    vert_box_count = (range_f.sup - range_f.inf) // box_size
     print("firstly we can fit ", vert_box_count, "boxes")
     # And expand it up to next_two() :
-    range_f = sp.Interval(range_f.inf, range_f.sup + (find_next_two(vert_box_count) - vert_box_count) * box_size)
     vert_box_count = find_next_two(vert_box_count)
+    range_f = sp.Interval(range_f.inf, range_f.inf + (vert_box_count * box_size))
 
     print(range_f, vert_box_count)
 
@@ -117,24 +109,88 @@ def create_grid_x(f): # For one variable functions
     #save_grid(grid, 'output_grid.png')
     return grid
 
+def rescale(grid):
+    rows = len(grid)
+    cols = len(grid[0])
+    new = [[False for _ in range(cols)] for _ in range(rows)]
+
+    for r in range(rows//2):
+        for c in range(cols//2):
+            new[r][c] = (grid[2*r][2*c] or grid[2*r][2*c + 1] or grid[2*r + 1][2*c] or grid[2*r + 1][2*c + 1])
+    return new
+
+def create_grid_IMG():
+    img_loc = input("Podaj lokalizację/nazwę pliku: ")
+    image = Image.open(img_loc).convert("RGB")
+
+    arr = asarray(image)
+    bool_arr = [[False for _ in range(len(arr[0]))] for _ in range(len(arr))]
+    """
+    for row in range(len(arr)):
+        for col in range(len(arr[0])):
+            print(arr[row][col], end = " ")
+        print()
+    return ("dupa hehe")
+
+"""
+    # Rewrite as True/False array:
+    treshold = 100
+    for row in range(len(arr)):
+        for col in range(len(arr[0])):
+            r, g, b = arr[row][col]
+            if(r<treshold or g<treshold or b<treshold):
+                bool_arr[row][col] = True
+
+    # Expand to fit 2^x edge size:
+    extra_cols = find_next_two(len(bool_arr)) - len(bool_arr)
+    extra_rows = find_next_two(len(bool_arr[0])) - len(bool_arr[0])
+    for row in range(len(bool_arr)):
+        bool_arr[row] = bool_arr[row] + [False for _ in range(extra_cols)]
+    newlen = len(bool_arr[0])
+    bool_arr += [[False for _ in range(newlen)] for _ in range(extra_rows)]
+
+    return bool_arr
+
 def count_boxes(boxes, rows, cols):
     N = 0
     for r in range(rows):
         for c in range(cols):
             if(boxes[r][c] == True):
                 N += 1
-    # Prepare new box grid (scaled to bigger boxes - smaller resolution)
-    scaled = [[False for _ in range(cols//2)] for _ in range(rows//2)]
 
     if(rows == 1 or cols == 1): # End recursion
         return [N]
-    return [N] + count_boxes(scaled, rows//2, cols//2)
 
+    # Prepare new box grid (scaled to bigger boxes - smaller resolution)
+    boxes = rescale(boxes) # Overwriting the array helps save some space (I think xD)
+    return count_boxes(boxes, rows//2, cols//2) + [N]
+
+
+def compute_dimension(b_num):
+    """
+    Important: We use log base = 2
+    We also use scaling factor = 2, so log(s) = i
+    """
+    n = len(b_num)
+    logs = np.empty([n])
+    logN = np.empty([n])
+
+    for i in range(n):
+        logs[i] = i # log2(2^i) = i
+        logN[i] = math.log2(b_num[i])
+    a, b = np.polyfit(logs, logN, 1)
+    return a
+
+arr = create_grid_IMG()
+Ns = count_boxes(arr, len(arr), len(arr[0]))
+print(compute_dimension(Ns))
+"""
 x = sp.symbols('x')
 
-grid = (create_grid_x(sp.sin(1/x)))
+grid = (create_grid_x(sp.cos(1/x)))
 
 for i in range(len(grid)):
     for j in grid[i]:
         print(j, end="")
     print()
+"""
