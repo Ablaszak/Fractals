@@ -7,7 +7,9 @@ from sympy import Basic
 from PIL import Image
 from skimage.morphology import skeletonize
 
-horizontal_box_count = 64
+Image.MAX_IMAGE_PIXELS = None # :3
+
+horizontal_box_count =  64
 
 def make_callable(f, x):
     if isinstance(f, Basic):
@@ -123,6 +125,12 @@ def rescale(grid):
 def prepare_IMG(img):
     img = img.convert("L")
 
+    if(img.width != img.height): # Prepare square canvas:
+        size = max(img.width, img.height)
+        canvas = Image.new("L", (size, size), 255)
+        canvas.paste(img)
+        img = canvas
+
     # Resize:
     hor, vert = img.size
     hor = find_next_two(hor)
@@ -160,9 +168,11 @@ def create_grid_IMG():
     bool_arr += [[False for _ in range(newlen)] for _ in range(extra_rows)]
     """
     # Skeletonize:
-    #skel = input("Czy chcesz wygładzić/zmniejszyć grubość linii? (y/n): ")
-    #if(skel == 'y' or skel == 'Y'):
-    #    bool_arr = skeletonize(np.array(bool_arr, dtype=bool))
+    """
+    skel = input("Czy chcesz wygładzić/zmniejszyć grubość linii? (y/n): ")
+    if(skel == 'y' or skel == 'Y'):
+        bool_arr = skeletonize(np.array(bool_arr, dtype=bool))
+    """
     #debug:
     """
     for row in range(len(bool_arr)):
@@ -245,13 +255,3 @@ def compute_dimension(b_num):
 arrout = create_grid_IMG()
 Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
 print(compute_dimension(Ns))
-"""
-x = sp.symbols('x')
-
-grid = (create_grid_x(sp.cos(1/x)))
-
-for i in range(len(grid)):
-    for j in grid[i]:
-        print(j, end="")
-    print()
-"""
