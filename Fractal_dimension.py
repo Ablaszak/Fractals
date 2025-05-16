@@ -120,9 +120,24 @@ def rescale(grid):
             new[r][c] = (grid[2*r][2*c] or grid[2*r][2*c + 1] or grid[2*r + 1][2*c] or grid[2*r + 1][2*c + 1])
     return new
 
+def prepare_IMG(img):
+    img = img.convert("L")
+
+    # Resize:
+    hor, vert = img.size
+    hor = find_next_two(hor)
+    vert = find_next_two(vert)
+    img = img.resize( (hor, vert) )
+
+    img.save("Prepared_image.png")
+    return img
+
 def create_grid_IMG():
+    # Open and prepare image:
     img_loc = input("Podaj lokalizację/nazwę pliku: ")
-    image = Image.open(img_loc).convert("L")
+    image = Image.open(img_loc)
+    image = prepare_IMG(image)
+
 
     arr = asarray(image)
     bool_arr = [[False for _ in range(len(arr[0]))] for _ in range(len(arr))]
@@ -135,6 +150,7 @@ def create_grid_IMG():
             if(L<threshold):
                 bool_arr[row][col] = True
 
+    """
     # Expand to fit 2^x edge size:
     extra_cols = find_next_two(len(bool_arr[0])) - len(bool_arr[0])
     extra_rows = find_next_two(len(bool_arr)) - len(bool_arr)
@@ -142,7 +158,7 @@ def create_grid_IMG():
         bool_arr[row] = bool_arr[row] + [False for _ in range(extra_cols)]
     newlen = len(bool_arr[0])
     bool_arr += [[False for _ in range(newlen)] for _ in range(extra_rows)]
-
+    """
     # Skeletonize:
     #skel = input("Czy chcesz wygładzić/zmniejszyć grubość linii? (y/n): ")
     #if(skel == 'y' or skel == 'Y'):
