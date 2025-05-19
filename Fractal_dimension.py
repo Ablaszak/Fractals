@@ -8,7 +8,15 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None # :3
 
-horizontal_box_count =  64
+# Parameters to adjust:
+horizontal_box_count =  1024*2
+
+# Numeric grid generation resolution (computations per box column):
+resolution = 128
+
+# Set this parameter to indicate how much you want to
+# shrink output image for function inputs (doesn't affect calculations)
+ratio = 4*2
 
 def find_next_two(num):
     two = 2
@@ -22,10 +30,10 @@ def find_next_two(num):
 # PARAMETRIC --------------------------------
 
 def get_info_para():
-
+    return None, None
 def create_grid_para():
-
     hor_span, vert_span = get_info_para()
+
 
 
 # ONE VARIABLE --------------------
@@ -37,33 +45,37 @@ def make_callable(f, x):
     else:
         raise TypeError("Brzydko >:C\nType error mordeczko")
 
-def find_xs_numeric(f, x, domain, ran, count, res=10000):
-    b_size = float((ran.sup - ran.inf) / count)
+def find_xs_numeric(f, x, domain, ran, hor, vert, shrinkus=1):
+    res = horizontal_box_count * resolution // shrinkus
+    b_size = float((ran.sup - ran.inf) / vert)
     x_step = (domain.sup - domain.inf) / res
-    xs = [[False for _ in range(res)] for _ in range(count)]
+    xs = [None for _ in range(res)]
+
+    grid = [[False for _ in range(hor)] for _ in range(vert)]
 
     N = make_callable(f, x)
     # Check f(x) values for different x:
     current = float(domain.inf - (x_step / 2) )# To get average value
-    for i in range(res): # 'i' is a function argument
+    for i in range(res):
         current += x_step
         # Exclude dangerous values:
         try:
             y = N(float(current))
         except(ZeroDivisionError, ValueError, TypeError):
-            print("WTF", current)
+            print("Something went out of range but it's fine ", current)
             continue
 
         if(y < ran.inf or y > ran.sup):
             continue
 
-        # Choosing a row in xs where the f(i) is:
+        # Choosing a row in xs where the f(current) is:
         row = round((float(ran.sup) - y) / b_size) # Trust me, it works
-        if(0 <= row < count): # Additional protection
-            xs[row][i] = True
+        if(0 <= row < vert): # Additional protection
+            grid[row][i//resolution] = True
         #else:
         #    print("fuck you", row)
-    return xs
+
+    return grid
 
 def get_info_x(f, x):
     yes = False # Flags user range input
@@ -97,9 +109,10 @@ def get_info_x(f, x):
             y2 = float(input())
             range_f = sp.Interval(y1, y2)
             yes = True
+
     return domain_f, range_f
 
-def create_grid_x(f): # For one variable functions
+def create_grid_x(): # For one variable functions
 
     x = sp.symbols('x')
     f = input("Enter formula: ")
@@ -122,11 +135,20 @@ def create_grid_x(f): # For one variable functions
 
     # Actual init:
 
-    grid = find_xs_numeric(f, x, domain_f, range_f, vert_box_count, horizontal_box_count)
+    grid = find_xs_numeric(f, x, domain_f, range_f, horizontal_box_count, vert_box_count)
 
-    # Save grid as image: (TO DO)
-    img = Image.fromarray(grid)
+    # Create previews:
+    img = [[(not pixel) * 255 for pixel in grid[row]] for row in range(len(grid))]
+    img = np.array(img, dtype=np.uint8)
+    img = Image.fromarray(img, mode='L')
+    img.save("Function_graph.png")
 
+    # Smaller image:
+    smol = find_xs_numeric(f, x, domain_f, range_f, horizontal_box_count//ratio, vert_box_count//ratio, ratio)
+    img = img = [[(not pixel) * 255 for pixel in smol[row]] for row in range(len(smol))]
+    img = np.array(img, dtype=np.uint8)
+    img = Image.fromarray(img, mode='L')
+    img.save("Function_graph_resized.png")
 
     return grid
 
@@ -281,7 +303,7 @@ fun = input("Podaj typ danych wejściowych\nObraz(1)\nFunckja jednej zmiennej(2)
 
 if(fun == "1"):
     arrout = create_grid_IMG()
-elif(fun == 2):
+elif(fun == "2"):
     arrout = create_grid_x()
 
 Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
