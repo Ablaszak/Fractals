@@ -22,12 +22,12 @@ def make_callable(f, x):
 def find_xs_numeric(f, x, domain, ran, count, res=10000):
     b_size = float((ran.sup - ran.inf) / count)
     x_step = (domain.sup - domain.inf) / res
-    xs = [[' ' for _ in range(res)] for _ in range(count)]
+    xs = [[False for _ in range(res)] for _ in range(count)]
 
     N = make_callable(f, x)
     # Check f(x) values for different x:
     current = float(domain.inf - (x_step / 2) )# To get average value
-    for i in range(res):
+    for i in range(res): # 'i' is a function argument
         current += x_step
         # Exclude dangerous values:
         try:
@@ -35,15 +35,16 @@ def find_xs_numeric(f, x, domain, ran, count, res=10000):
         except(ZeroDivisionError, ValueError, TypeError):
             print("WTF", current)
             continue
-        #print("UDALO SIE UDALO SIE UDALO SIE ---------------------")
+
         if(y < ran.inf or y > ran.sup):
             continue
-        # Choosing a row in xs where the y is:
+
+        # Choosing a row in xs where the f(i) is:
         row = round((float(ran.sup) - y) / b_size) # Trust me, it works
         if(0 <= row < count): # Additional protection
-            xs[row][i] = 'X'
-        else:
-            print("fuck you", row)
+            xs[row][i] = True
+        #else:
+        #    print("fuck you", row)
     return xs
 
 def find_next_two(num):
@@ -55,41 +56,45 @@ def find_next_two(num):
         return -two
     return two
 
-
-def create_grid_x(f): # For one variable functions
-
-    x = sp.symbols('x')
+def get_info_x(f, x):
+    yes = False # Flags user range input
     print("Podaj dziedzinę: ")
     x1 = float(input())
     x2 = float(input())
     domain_f = sp.Interval(x1, x2)
     print("Dziedzina: ", domain_f)
     try:
-        print("Jeżeli proecs wykonuje się w nieskończoność, wciśnij ctrl+c")
+        print("Jeżeli proces wykonuje się w nieskończoność, wciśnij ctrl+c")
         range_f = sp.calculus.util.function_range(f, x, domain_f)
-    except:
+    except KeyboardInterrupt:
+        yes = True
         print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
         y1 = float(input())
         y2 = float(input())
         range_f = sp.Interval(y1, y2)
 
     print("Przedział wartości: ", range_f)
-    # check if interval is open:
+    # check if interval is open: (probably won't ever happen)
     if(range_f.is_left_unbounded or range_f.is_right_unbounded):
         print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
         y1 = float(input())
         y2 = float(input())
         range_f = sp.Interval(y1, y2)
-    else:
-        print("Czy chcesz przeanalizować fraktal w innym zakresie (w pionie)? (y/n): ")
-        y1 = input()
+    elif(yes == False):
+        y1 = input("Czy chcesz przeanalizować fraktal w innym zakresie (w pionie)? (y/n)")
         if(y1 == 'Y' or y1 == 'y'):
             print("Podaj przedziały (wartości zostaną lekko zwiększone): ")
             y1 = float(input())
             y2 = float(input())
             range_f = sp.Interval(y1, y2)
+            yes = True
+    return domain_f, range_f
 
-    # Now we actually create the grid:
+def create_grid_x(f): # For one variable functions
+
+    x = sp.symbols('x')
+
+    domain_f, range_f = get_info_x(f, x)
 
     # Init:
     # First, we have to find grid dimensions
@@ -109,7 +114,6 @@ def create_grid_x(f): # For one variable functions
 
     grid = find_xs_numeric(f, x, domain_f, range_f, vert_box_count, horizontal_box_count)
 
-    #save_grid(grid, 'output_grid.png')
     return grid
 
 def rescale(grid):
