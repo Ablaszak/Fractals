@@ -10,6 +10,25 @@ Image.MAX_IMAGE_PIXELS = None # :3
 
 horizontal_box_count =  64
 
+def find_next_two(num):
+    two = 2
+    while(two < abs(num)):
+        two *= 2
+
+    if(num < 0):
+        return -two
+    return two
+
+# PARAMETRIC --------------------------------
+
+def get_info_para():
+
+def create_grid_para():
+
+    hor_span, vert_span = get_info_para()
+
+
+# ONE VARIABLE --------------------
 def make_callable(f, x):
     if isinstance(f, Basic):
         return sp.lambdify(x, f, 'numpy')
@@ -45,15 +64,6 @@ def find_xs_numeric(f, x, domain, ran, count, res=10000):
         #else:
         #    print("fuck you", row)
     return xs
-
-def find_next_two(num):
-    two = 2
-    while(two < abs(num)):
-        two *= 2
-
-    if(num < 0):
-        return -two
-    return two
 
 def get_info_x(f, x):
     yes = False # Flags user range input
@@ -92,6 +102,8 @@ def get_info_x(f, x):
 def create_grid_x(f): # For one variable functions
 
     x = sp.symbols('x')
+    f = input("Enter formula: ")
+    f = sp.sympify(f)
 
     domain_f, range_f = get_info_x(f, x)
 
@@ -112,21 +124,15 @@ def create_grid_x(f): # For one variable functions
 
     grid = find_xs_numeric(f, x, domain_f, range_f, vert_box_count, horizontal_box_count)
 
+    # Save grid as image: (TO DO)
+    img = Image.fromarray(grid)
+
+
     return grid
 
 
 # IMG -------------------------
 
-
-def rescale(grid):
-    rows = len(grid)//2
-    cols = len(grid[0])//2
-    new = [[False for _ in range(cols)] for _ in range(rows)]
-
-    for r in range(rows):
-        for c in range(cols):
-            new[r][c] = (grid[2*r][2*c] or grid[2*r][2*c + 1] or grid[2*r + 1][2*c] or grid[2*r + 1][2*c + 1])
-    return new
 
 def prepare_IMG(img):
     img = img.convert("L")
@@ -191,6 +197,18 @@ def create_grid_IMG():
     """
     return bool_arr
 
+# MAIN ENGINE ----------------
+
+def scale_down(grid):
+    rows = len(grid)//2
+    cols = len(grid[0])//2
+    new = [[False for _ in range(cols)] for _ in range(rows)]
+
+    for r in range(rows):
+        for c in range(cols):
+            new[r][c] = (grid[2*r][2*c] or grid[2*r][2*c + 1] or grid[2*r + 1][2*c] or grid[2*r + 1][2*c + 1])
+    return new
+
 def count_boxes(boxes, rows, cols):
     #debug:
     """
@@ -211,10 +229,9 @@ def count_boxes(boxes, rows, cols):
     if(rows == 1 or cols == 1): # End recursion
         return [N]
 
-    # Prepare new box grid (scaled to bigger boxes - smaller resolution)
-    boxes = rescale(boxes) # Overwriting the array helps save some space (I think xD)
+    # Prepare new box grid (scaled to bigger boxes - smaller image resolution)
+    boxes = scale_down(boxes) # Overwriting the array helps save some space (I think xD)
     return count_boxes(boxes, rows//2, cols//2) + [N]
-
 
 def compute_dimension(b_num):
     """
@@ -258,16 +275,14 @@ def compute_dimension(b_num):
 
     return a
 
-def run_img():
-    arrout = create_grid_IMG()
-    Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
-    print(compute_dimension(Ns))
-
 # MAIN ----------------------------------
 
 fun = input("Podaj typ danych wejściowych\nObraz(1)\nFunckja jednej zmiennej(2)\nFunckja dwóch zmiennych(3)\n")
 
 if(fun == "1"):
-    run_img()
+    arrout = create_grid_IMG()
 elif(fun == 2):
-    asd=1
+    arrout = create_grid_x()
+
+Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
+print(compute_dimension(Ns))
