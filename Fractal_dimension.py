@@ -14,14 +14,14 @@ Image.MAX_IMAGE_PIXELS = None # :3
 """
 
 # Number of columns of boxes:
-horizontal_box_count =  128
+horizontal_box_count =  1024*2*2
 
 # Numeric grid generation resolution (computations per box column):
-resolution = 8
+resolution = 16*2
 
 # Set this parameter to indicate how much you want to
 # shrink output image for function inputs (doesn't affect calculations)
-ratio = 4*2
+ratio = 4*2*2*2*2*2
 
 """
     THE END OF MODIFIABLE VARIABLES
@@ -40,15 +40,21 @@ def find_next_two(num):
 # PARAMETRIC --------------------------------
 
 def find_boxes_para(fx, fy, t, t_range, x_span, y_span, hor, vert, shrinkus=1):
+    """
+    Cannot write below code using numpy linespaces and vector computations,
+    because input functions can be mathematically fucked up and
+    can be only interpreted as callable by sympy :c
+    """
+
     b_size = (x_span.sup - x_span.inf) / hor
-    t_step = b_size / resolution
+    res = horizontal_box_count * resolution // shrinkus
+    t_step = (t_range.sup - t_range.inf) / res
 
     grid = [[False for _ in range(hor)] for _ in range(vert)]
 
     Fcx = make_callable(fx, t)
     Fcy = make_callable(fy, t)
 
-    res = horizontal_box_count * resolution // shrinkus
 
     current = t_range.inf - (t_step/2)
     for i in range(res):
