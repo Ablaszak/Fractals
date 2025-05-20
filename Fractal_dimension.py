@@ -168,32 +168,32 @@ def find_xs_numeric(f, x, domain, ran, hor, vert, shrinkus=1):
 
 def get_info_x(f, x):
     yes = False # Flags user range input
-    print("Podaj dziedzinę: ")
+    print("Input function domain: ")
     x1 = float(input())
     x2 = float(input())
     domain_f = sp.Interval(x1, x2)
-    print("Dziedzina: ", domain_f)
+    print("Domain: ", domain_f)
     try:
-        print("Jeżeli proces wykonuje się w nieskończoność, wciśnij ctrl+c")
+        print("If the process takes forever, press ctrl+c")
         range_f = sp.calculus.util.function_range(f, x, domain_f)
     except KeyboardInterrupt:
         yes = True
-        print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
+        print("the function tends to infinity, provide intervals for analysis: ")
         y1 = float(input())
         y2 = float(input())
         range_f = sp.Interval(y1, y2)
 
-    print("Przedział wartości: ", range_f)
+    print("Value range:", range_f)
     # check if interval is open: (probably won't ever happen)
     if(range_f.is_left_unbounded or range_f.is_right_unbounded):
-        print("funkcja dąży do nieskończoności, podaj przedziały do analizy: ")
+        print("the function tends to infinity, provide intervals for analysis: ")
         y1 = float(input())
         y2 = float(input())
         range_f = sp.Interval(y1, y2)
     elif(yes == False):
-        y1 = input("Czy chcesz przeanalizować fraktal w innym zakresie (w pionie)? (y/n)")
+        y1 = input("Would you like to analyze the fractal in a different range (vertical)? (y/n)")
         if(y1 == 'Y' or y1 == 'y'):
-            print("Podaj przedziały (wartości zostaną lekko zwiększone): ")
+            print("Enter ranges (values will be slightly increased): ")
             y1 = float(input())
             y2 = float(input())
             range_f = sp.Interval(y1, y2)
@@ -215,7 +215,7 @@ def create_grid_x(): # For one variable functions
     box_size = ((domain_f.sup - domain_f.inf) / horizontal_box_count)
     # Now check how many boxes will fit vertically:
     vert_box_count = (range_f.sup - range_f.inf) // box_size
-    print("firstly we can fit ", vert_box_count, "boxes")
+    #print("firstly we can fit ", vert_box_count, "boxes")
     # And expand it up to next_two() :
     vert_box_count = find_next_two(vert_box_count)
     range_f = sp.Interval(range_f.inf, range_f.inf + (vert_box_count * box_size))
@@ -265,7 +265,7 @@ def prepare_IMG(img):
 
 def create_grid_IMG():
     # Open and prepare image:
-    img_loc = input("Podaj lokalizację/nazwę pliku: ")
+    img_loc = input("Enter file location/name:")
     image = Image.open(img_loc)
     image = prepare_IMG(image)
 
@@ -374,21 +374,21 @@ def compute_dimension(b_num):
     plt.plot(x_line, y_line, linestyle='-', label=f'fit: y={a:.3f}x+{b:.3f}')
 
     # 3. Opisy osi i legenda
-    plt.xlabel('log₂(skalowanie) [i]')
-    plt.ylabel('log₂(liczba pudełek) [log N]')
-    plt.title('Box‐counting: log–log i linia regresji')
+    plt.xlabel('log₂(scaling) [i]')
+    plt.ylabel('log₂(number of boxes) [log N]')
+    plt.title('Box‐counting: log–log and regression line')
     plt.legend()
     plt.grid(True)
 
     # 4. Zapisz wykres
-    plt.savefig('wykres.png', dpi=300, bbox_inches='tight')
+    plt.savefig('graph.png', dpi=300, bbox_inches='tight')
     plt.close()
 
     return a
 
 # MAIN ----------------------------------
 
-fun = input("Podaj typ danych wejściowych\nObraz(1)\nFunckja jednej zmiennej(2)\nFunckja dwóch zmiennych(3)\n")
+fun = input("Specify input type\nImage(1)\Function of one variable(2)\nParametric function(3)\n")
 prop_input = True
 if(fun == "1"):
     arrout = create_grid_IMG()
