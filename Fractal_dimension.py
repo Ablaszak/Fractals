@@ -8,15 +8,25 @@ from PIL import Image
 
 Image.MAX_IMAGE_PIXELS = None # :3
 
-# Parameters to adjust:
-horizontal_box_count =  1024*2
+"""
+    YOU CAN CAREFULLY ADJUST PARAMETERS BELOW
+    YOU ARE NOT ALLOWED TO CHANGE VARIABLE NAMES (IMMA FUCK YOU UP IF YOU DO)
+"""
+
+# Number of columns of boxes:
+horizontal_box_count =  128
 
 # Numeric grid generation resolution (computations per box column):
-resolution = 128
+resolution = 8
 
 # Set this parameter to indicate how much you want to
 # shrink output image for function inputs (doesn't affect calculations)
 ratio = 4*2
+
+"""
+    THE END OF MODIFIABLE VARIABLES
+    NOT A STEP FURTHER
+"""
 
 def find_next_two(num):
     two = 2
@@ -29,12 +39,85 @@ def find_next_two(num):
 
 # PARAMETRIC --------------------------------
 
-def get_info_para():
-    return None, None
+def find_boxes_para(fx, fy, t, t_range, x_span, y_span, hor, vert, shrinkus=1):
+    b_size = (x_span.sup - x_span.inf) / hor
+    t_step = b_size / resolution
+
+    grid = [[False for _ in range(hor)] for _ in range(vert)]
+
+    Fcx = make_callable(fx, t)
+    Fcy = make_callable(fy, t)
+
+    res = horizontal_box_count * resolution // shrinkus
+
+    current = t_range.inf - (t_step/2)
+    for i in range(res):
+        current += t_step
+        y = Fcy(float(current))
+        x = Fcx(float(current))
+
+        # Safety feature:
+        if(y<y_span.inf or y>y_span.sup):
+            continue
+        if(x<x_span.inf or x>x_span.sup):
+            continue
+
+        # Convert x, y to box id:
+        y = round((float(y_span.sup) - y) / b_size)
+        x = round((float(x_span.sup) - x) / b_size)
+
+        if not (0 <= y < vert and 0 <= x < hor): # Additional safety
+            continue
+
+        grid[y][x] = True
+
+    return grid
+
 def create_grid_para():
-    hor_span, vert_span = get_info_para()
 
+    # Prepare functions:
+    t = sp.symbols('t')
+    fx = input("Insert x(t) formula: ")
+    fy = input("insert y(t) formula: ")
+    print("Insert fractal dimensions (x1, x2, y1, y2): ")
+    x1 = float(input())
+    x2 = float(input())
+    y1 = float(input())
+    y2 = float(input())
 
+    print("Insert t range: ")
+    t1 = float(input())
+    t2 = float(input())
+    t_range = sp.Interval(t1, t2)
+
+    x_span = sp.Interval(x1, x2)
+    y_span = sp.Interval(y1, y2)
+
+    fx = sp.sympify(fx)
+    fy = sp.sympify(fy)
+
+    # Prepare grid dimensions:
+    box_size = (x2 - x1) / horizontal_box_count
+    vertical_box_count = (y2 - y1) / box_size # I know it is a float, dw
+    vertical_box_count = find_next_two(vertical_box_count) # Now it is int
+
+    # Grid init:
+    grid = find_boxes_para(fx, fy, t, t_range, x_span, y_span, horizontal_box_count, vertical_box_count)
+
+    # Create previews:
+    img = [[(not pixel) * 255 for pixel in grid[row]] for row in range(len(grid))]
+    img = np.array(img, dtype=np.uint8)
+    img = Image.fromarray(img, mode='L')
+    img.save("Function_graph.png")
+
+    # Smaller image:
+    smol = find_boxes_para(fx, fy, t, t_range, x_span, y_span, horizontal_box_count//ratio, vertical_box_count//ratio, ratio)
+    img = [[(not pixel) * 255 for pixel in smol[row]] for row in range(len(smol))]
+    img = np.array(img, dtype=np.uint8)
+    img = Image.fromarray(img, mode='L')
+    img.save("Function_graph_resized.png")
+
+    return grid
 
 # ONE VARIABLE --------------------
 def make_callable(f, x):
@@ -145,7 +228,7 @@ def create_grid_x(): # For one variable functions
 
     # Smaller image:
     smol = find_xs_numeric(f, x, domain_f, range_f, horizontal_box_count//ratio, vert_box_count//ratio, ratio)
-    img = img = [[(not pixel) * 255 for pixel in smol[row]] for row in range(len(smol))]
+    img = [[(not pixel) * 255 for pixel in smol[row]] for row in range(len(smol))]
     img = np.array(img, dtype=np.uint8)
     img = Image.fromarray(img, mode='L')
     img.save("Function_graph_resized.png")
@@ -300,11 +383,17 @@ def compute_dimension(b_num):
 # MAIN ----------------------------------
 
 fun = input("Podaj typ danych wejściowych\nObraz(1)\nFunckja jednej zmiennej(2)\nFunckja dwóch zmiennych(3)\n")
-
+prop_input = True
 if(fun == "1"):
     arrout = create_grid_IMG()
 elif(fun == "2"):
     arrout = create_grid_x()
+elif(fun == "3"):
+    arrout = create_grid_para()
+else:
+    print("Incorrect input >:C")
+    prop_input = False
 
-Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
-print(compute_dimension(Ns))
+if(prop_input):
+    Ns = count_boxes(arrout, len(arrout), len(arrout[0]))
+    print(compute_dimension(Ns))
