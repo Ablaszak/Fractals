@@ -14,14 +14,14 @@ Image.MAX_IMAGE_PIXELS = None # :3
 """
 
 # Number of columns of boxes:
-horizontal_box_count =  1024*2*2
+horizontal_box_count =  1024*2
 
 # Numeric grid generation resolution (computations per box column):
-resolution = 16*2
+resolution = 32*2
 
 # Set this parameter to indicate how much you want to
 # shrink output image for function inputs (doesn't affect calculations)
-ratio = 4*2*2*2*2*2
+ratio = 4*2*2*2*2
 
 """
     THE END OF MODIFIABLE VARIABLES
@@ -265,20 +265,25 @@ def prepare_IMG(img):
 
 def create_grid_IMG():
     # Open and prepare image:
-    img_loc = input("Enter file location/name:")
+    img_loc = input("Enter file location/name: ")
+    treshold = int(input("Enter treschold: "))
     image = Image.open(img_loc)
     image = prepare_IMG(image)
 
 
     arr = asarray(image)
+
+    #for i in range(len(arr)):
+    #    print(arr[i])
+
     bool_arr = [[False for _ in range(len(arr[0]))] for _ in range(len(arr))]
 
     # Rewrite as True/False array:
-    threshold = 100
+    #threshold = 100
     for row in range(len(arr)):
         for col in range(len(arr[0])):
             L = arr[row][col]
-            if(L<threshold):
+            if(L<treshold):
                 bool_arr[row][col] = True
 
     """
@@ -352,7 +357,7 @@ def compute_dimension(b_num):
 
     # Kill first results: (better or not?)
     b_num = b_num[len(b_num)//5 : ]
-    print(b_num)
+    #print(b_num)
 
     n = len(b_num)
     logs = np.empty([n])
@@ -388,7 +393,7 @@ def compute_dimension(b_num):
 
 # MAIN ----------------------------------
 
-fun = input("Specify input type\nImage(1)\Function of one variable(2)\nParametric function(3)\n")
+fun = input("Specify input type\nFunction of one variable(1)\nParametric function(2)\nParametric function(3)\n")
 prop_input = True
 if(fun == "1"):
     arrout = create_grid_IMG()
